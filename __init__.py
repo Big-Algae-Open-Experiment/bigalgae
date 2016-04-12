@@ -444,6 +444,19 @@ def extract_time_and_sensor_information(img, contours, hierarchy):
     time_information = get_time_and_sensor_information(binary)
     return((0, time_information, 'Finished'))
 
+def return_x_y_rgb(contour, image, size):
+    x, y, cnt_width, cnt_height = cv2.boundingRect(contour)
+    y1 = int(y + (cnt_height/size))
+    y2 = int(y + (((size-1)*cnt_height)/size))
+    x1 = int(x + (cnt_width/size))
+    x2 = int(x + (((size-1)*cnt_width)/size))
+    roi = image[y1:y2, x1:x2]
+    # by default, flatten flattens the array row wise [row1, row2, etc.]
+    blue_vec, green_vec, red_vec = [list(matrix.flatten()) for matrix in cv2.split(roi)]
+    y_vec = [y for y in range(y1, y2) for x in range(x1, x2)]
+    x_vec = range(x1, x2) * (y2-y1)
+    return(x_vec, y_vec, blue_vec, green_vec, red_vec)
+
 def analyse_image(image_filepath):
     
     img = cv2.imread(image_filepath, cv2.CV_LOAD_IMAGE_COLOR)
