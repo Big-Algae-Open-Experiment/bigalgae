@@ -10,8 +10,8 @@ import cv2
 def generate_digit_code(N):
     ''' Returns a random string of digits of length N '''
     return(''.join(random.SystemRandom().choice(string.digits)     \
-                   for _ in range(N)))    
-    
+                   for _ in range(N)))
+
 def generate_validation_key(N):
     ''' Returns a random string of letters and digits of length N '''
     return(''.join(random.SystemRandom().choice(string.uppercase + \
@@ -22,19 +22,19 @@ def generate_validation_key(N):
 def send_email(message, recipient_address):
     me = 'bigalgaeopenexperiment@gmail.com'
     password = get_email_password()
-    
+
     message['From'] = me
     message['To'] = recipient_address
-    
+
     email_server = smtplib.SMTP('smtp.gmail.com:587')
     email_server.ehlo()
     email_server.starttls()
     email_server.login(me, password)
     email_server.sendmail(me, recipient_address, message.as_string())
     email_server.quit()
-        
+
     return(True)
-    
+
 def get_email_password():
     with open('/var/www/html/baoe-app/.google_password') as f:
         return(f.readline().strip())
@@ -57,7 +57,7 @@ def extract_exif_data(image_filepath):
             for tag in exif_dict[ifd]:
                 output_dict[piexif.TAGS[ifd][tag]["name"]] = exif_dict[ifd][tag]
     return(output_dict)
-        
+
 def within_range(test_value, mid_point, error):
     # A function which tests to see whether the variable mid_point
     # is within an interval defined by test_value - error and
@@ -121,7 +121,7 @@ def sort_corner_handles(corner_list, contour_list):
     not make a distinction between the bottom_left and the top_right as the
     calibration strip is symmetrical about the top left to bottom right
     diagonal'''
-    
+
     corner_centres = [get_centre_of_contour(contour_list[corner[2]]) \
         for corner in corner_list]
     combinations = [[0,1],[0,2],[1,2]]
@@ -131,7 +131,7 @@ def sort_corner_handles(corner_list, contour_list):
                   for (i, j) in combinations ]
     comb_idx = 0
     top_left = 2
-              
+
     for idx in range(1, len(distances)):
         if distances[idx] == max(distances):
             if idx == 1:
@@ -152,17 +152,17 @@ def get_colour_contours_idx(sorted_corner_list, contour_list):
     top_left_point = corner_centres[1]
     top_right_point = corner_centres[2]
     bottom_right_point = [corner_centres[2][0], corner_centres[0][1]]
-    
+
     mean_grandp_area = numpy.mean(tuple([cv2.contourArea(contour_list[corner[2]]) \
         for corner in sorted_corner_list]))
-    
+
     left_vertical_distance = bottom_left_point[1]-top_left_point[1]
     right_vertical_distance = bottom_right_point[1]-top_right_point[1]
     top_horizontal_distance = top_right_point[0]-top_left_point[0]
     bottom_horizontal_distance = bottom_right_point[0]-bottom_left_point[0]
-    
+
     colour_square_dict = {}
-    
+
     for colour in ['blue', 'green', 'red']:
         test_points = []
         if colour == 'blue':
@@ -192,7 +192,7 @@ def get_colour_contours_idx(sorted_corner_list, contour_list):
                 int(0.5*(top_horizontal_distance)), top_left_point[1]))
             test_points.append((bottom_left_point[0] + \
                 int(0.5*(bottom_horizontal_distance)), bottom_left_point[1]))
-    
+
         error = 100
         matches = 0
         while matches < 4:
@@ -207,7 +207,7 @@ def get_colour_contours_idx(sorted_corner_list, contour_list):
                     if 1 in test_results:
                         matches += 1
                         colour_square_dict[colour].append(idx)
-                        
+
     return(colour_square_dict)
 
 def get_central_window_idx(sorted_corner_list, contour_list):
@@ -237,7 +237,7 @@ def rect_crop(contour, image, size):
     x2 = int(x + (((size[0]-1)*cnt_width)/size[0]))
     roi = image[y1:y2, x1:x2]
     return(roi)
-    
+
 def filter_handles(handle_list, contour_list, error):
     areas_of_contours = [cv2.contourArea(contour_list[handle_list[idx][0]])
                          for idx in range(len(handle_list))]
@@ -250,7 +250,7 @@ def filter_handles(handle_list, contour_list, error):
         return([handle_list[idx] for idx in range(len(handle_list)) if within_range(areas_of_contours[idx], minimum, minimum*error)])
     else:
         return([])
-    
+
 def get_time_handles(contour_list, hierarchy_list, max_error):
     error = 0.0
     time_handle_idx = []
@@ -274,7 +274,7 @@ def get_time_handles(contour_list, hierarchy_list, max_error):
                 time_handle_idx.append([idx, parent_idx, grandparent_idx])
         time_handle_idx = filter_handles(time_handle_idx, contour_list, 0.5)
         error += 0.2
-    
+
     if len(time_handle_idx) == 3:
         sorted_time_handles = sort_time_handles(time_handle_idx, contour_list)
         return(sorted_time_handles)
@@ -294,7 +294,7 @@ def sort_time_handles(time_handle_list, contour_list):
                   for (i, j) in combinations ]
     comb_idx = 0
     middle = 2
-              
+
     for idx in range(1, len(distances)):
         if distances[idx] == max(distances):
             if idx == 1:
@@ -303,14 +303,14 @@ def sort_time_handles(time_handle_list, contour_list):
             elif idx == 2:
                 comb_idx = 2
                 middle = 0
-                
+
     time_handle_list = [time_handle_list[combinations[comb_idx][0]],
                         time_handle_list[combinations[comb_idx][1]],
                         time_handle_list[middle]]
-         
-    index_0_parent_area = cv2.contourArea(contour_list[time_handle_list[0][1]])            
+
+    index_0_parent_area = cv2.contourArea(contour_list[time_handle_list[0][1]])
     index_1_parent_area = cv2.contourArea(contour_list[time_handle_list[1][1]])
-    
+
     if index_1_parent_area > index_0_parent_area:
         time_handle_list = [time_handle_list[1],
                             time_handle_list[0],
@@ -327,20 +327,23 @@ def extract_algae_window(contour_list, hierarchy_list, original_image, \
     corner_centres = [get_centre_of_contour(contour_list[corner[2]]) \
         for corner in corners]
 
-    distance = max(corner_centres[0][1] - corner_centres[1][1], \
-        corner_centres[2][0] - corner_centres[1][0]) 
-              
+    distance = max(
+        ((corner_centres[0][0] - corner_centres[1][0])**2 +
+         (corner_centres[0][1] - corner_centres[1][1])**2)**0.5,
+        ((corner_centres[2][0] - corner_centres[1][0])**2 +
+         (corner_centres[2][1] - corner_centres[1][1])**2)**0.5)
+
     short_distance = 5.5*(distance/32.0)
     long_distance = 37.5*(distance/32.0)
     total_distance = int(numpy.ceil(43.0*(distance/32.0)))
-    
+
     model_points = numpy.array([ [short_distance,long_distance], \
         [short_distance,short_distance], [long_distance,short_distance] ], \
         dtype='float32')
     corner_points = numpy.array(corner_centres, dtype='float32')
-              
+
     M = cv2.getAffineTransform(corner_points, model_points)
-    
+
     rotated_cropped_img = cv2.warpAffine( numpy.copy(original_image), M, \
         (total_distance, total_distance) )
     return((0, rotated_cropped_img, 'Success'))
@@ -348,10 +351,10 @@ def extract_algae_window(contour_list, hierarchy_list, original_image, \
 def extract_time_window(contour_list, hierarchy_list, original_image, \
     max_error):
     time_handles = get_time_handles(contour_list, hierarchy_list, max_error)
-    
+
     if time_handles == None:
         return((1, None, 'No time handle detected'))
-    
+
     time_handle_centres = [get_centre_of_contour(contour_list[handle[2]]) \
         for handle in time_handles]
 
@@ -359,24 +362,24 @@ def extract_time_window(contour_list, hierarchy_list, original_image, \
     one_unit = (distance / (81.5/2.3))
     total_vertical_distance = int(numpy.ceil(17.0 * one_unit))
     total_horizontal_distance = int(numpy.ceil((11.0+(81.5/2.3)) * one_unit))
-    
+
     short_horizontal_distance = 5.5 * one_unit
     long_vertical_distance = 12.5 * one_unit
     long_horizontal_distance = (5.5+(81.5/2.3)) * one_unit
-    
+
     model_points = numpy.array([ [short_horizontal_distance, \
         short_horizontal_distance], [long_horizontal_distance, \
         short_horizontal_distance], [(short_horizontal_distance + \
         long_horizontal_distance) / 2, long_vertical_distance] ], \
         dtype='float32')
     time_handle_points = numpy.array(time_handle_centres, dtype='float32')
-              
+
     M = cv2.getAffineTransform(time_handle_points, model_points)
-    
+
     rotated_cropped_img = cv2.warpAffine( numpy.copy(original_image), M, \
         (total_horizontal_distance, total_vertical_distance) )
     return((0, rotated_cropped_img, 'Success'))
-    
+
 def threshold_image(original_image, gaussian_blur_kernel_size):
     img_grey = cv2.cvtColor(numpy.copy(original_image),cv2.COLOR_BGR2GRAY)
     img_grey = cv2.GaussianBlur(img_grey, (gaussian_blur_kernel_size, \
@@ -386,7 +389,7 @@ def threshold_image(original_image, gaussian_blur_kernel_size):
     contours, hierarchy = cv2.findContours(numpy.copy(thresh_img), \
         cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
     return((thresh_img, contours, hierarchy))
-    
+
 def get_central_time_window_idx(time_handle_list, contour_list):
     time_handle_centres = [get_centre_of_contour(contour_list[handle[2]]) \
         for handle in time_handle_list[0:2]]
@@ -405,7 +408,7 @@ def get_central_time_window_idx(time_handle_list, contour_list):
                 cv2.pointPolygonTest(contour_list[idx], centre_point, False)==1:
                 match_idx = idx
     return(match_idx)
-    
+
 def convert_binary(binary_array, start_idx, end_idx):
     return(numpy.sum(binary_array[start_idx:end_idx] * \
         numpy.array([2**i for i in reversed(range(end_idx-start_idx))])))
@@ -427,7 +430,7 @@ def extract_time_and_sensor_information(img, contours, hierarchy):
     if time_handles == None:
         return((1, None, 'No time handle detected'))
     time_idx = get_central_time_window_idx(time_handles, time_contours)
-    roi = rect_crop(time_contours[time_idx], time_img_grey, ((60.8/2.3),7))    
+    roi = rect_crop(time_contours[time_idx], time_img_grey, ((60.8/2.3),7))
     roi_h, roi_w = roi.shape
     cell_w = int(roi_w / 16.0)
     cell_h = int(roi_h / 2.0)
@@ -458,7 +461,7 @@ def return_x_y_rgb(contour, image, size):
     return(x_vec, y_vec, blue_vec, green_vec, red_vec)
 
 def analyse_image(image_filepath):
-    
+
     img = cv2.imread(image_filepath, cv2.CV_LOAD_IMAGE_COLOR)
 
     width, height, channels = img.shape
